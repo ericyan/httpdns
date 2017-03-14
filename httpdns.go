@@ -40,18 +40,23 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 			log.Printf("Error: %s", err)
 			m.SetRcode(r, dns.RcodeServerFailure)
 		} else {
-			answer := make([]dns.RR, 0, len(result))
-			for _, ip := range result {
-				ttl := uint32(600) // FIXME: Retrieve TTL from upstream
+			if len(result) > 0 {
+				answer := make([]dns.RR, 0, len(result))
+				for _, ip := range result {
+					ttl := uint32(600) // FIXME: Retrieve TTL from upstream
 
-				rr := new(dns.A)
-				rr.Hdr = dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl}
-				rr.A = ip
+					rr := new(dns.A)
+					rr.Hdr = dns.RR_Header{Name: q.Name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl}
+					rr.A = ip
 
-				answer = append(answer, rr)
+					answer = append(answer, rr)
+				}
+
+				m.Answer = answer
+			} else {
+				m.SetRcode(r, dns.RcodeNameError)
 			}
 
-			m.Answer = answer
 			log.Printf("%s -> %v\n", q.Name, result)
 		}
 	} else {
@@ -76,7 +81,9 @@ func query(dn string) ([]net.IP, error) {
 	}
 
 	for _, ip := range strings.Split(string(body), ";") {
-		result = append(result, net.ParseIP(ip))
+		if ip := net.ParseIP(ip); ip != nil {
+			result = append(result, ip)
+		}
 	}
 
 	return result, nil
