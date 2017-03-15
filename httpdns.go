@@ -35,7 +35,17 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	q := r.Question[0]
 	if q.Qtype == dns.TypeA {
-		result, err := query(q.Name)
+		clientIP := net.IP{}
+		opt := r.IsEdns0()
+		if opt != nil {
+			for _, edns := range opt.Option {
+				if edns.Option() == dns.EDNS0SUBNET {
+					clientIP = edns.(*dns.EDNS0_SUBNET).Address
+				}
+			}
+		}
+
+		result, err := query(q.Name, clientIP)
 		if err != nil {
 			log.Printf("Error: %s", err)
 			m.SetRcode(r, dns.RcodeServerFailure)
@@ -66,10 +76,14 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 	w.WriteMsg(m)
 }
 
-func query(dn string) ([]net.IP, error) {
+func query(dn string, ip net.IP) ([]net.IP, error) {
 	result := make([]net.IP, 0)
 
-	resp, err := http.Get("http://119.29.29.29/d?dn=" + dn)
+	qs := "http://119.29.29.29/d?dn=" + dn
+	if len(ip) > 0 {
+		qs = qs + "&ip=" + ip.String()
+	}
+	resp, err := http.Get(qs)
 	if err != nil {
 		return result, err
 	}
