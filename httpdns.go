@@ -15,6 +15,7 @@ import (
 
 func main() {
 	dns.HandleFunc(".", handleRequest)
+	dns.HandleFunc("httpdns.", instrumentation)
 
 	go func() {
 		srv := &dns.Server{Addr: ":8653", Net: "udp"}
