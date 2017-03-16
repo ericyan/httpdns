@@ -18,16 +18,7 @@ func (h handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 	q := r.Question[0]
 	if q.Qtype == dns.TypeA {
-		clientIP := net.IP{}
-		opt := r.IsEdns0()
-		if opt != nil {
-			for _, edns := range opt.Option {
-				if edns.Option() == dns.EDNS0SUBNET {
-					clientIP = edns.(*dns.EDNS0_SUBNET).Address
-				}
-			}
-		}
-
+		clientIP := h.getECS(r)
 		answer, err := h.upstream(q.Name, clientIP)
 		if err != nil {
 			log.Printf("Error: %s", err)
@@ -46,4 +37,20 @@ func (h handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	}
 
 	w.WriteMsg(m)
+}
+
+func (h handler) getECS(r *dns.Msg) net.IP {
+	ecs := net.IP{}
+
+	opt := r.IsEdns0()
+	if opt != nil {
+		for _, edns := range opt.Option {
+			if edns.Option() == dns.EDNS0SUBNET {
+				ecs = edns.(*dns.EDNS0_SUBNET).Address
+			}
+		}
+	}
+
+	log.Printf("ECS: %s\n", ecs)
+	return ecs
 }
