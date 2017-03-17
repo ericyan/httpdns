@@ -1,14 +1,17 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/miekg/dns"
 )
 
 type handler struct {
-	upstream UpstreamFunc
+	upstream     UpstreamFunc
+	ecsOverrides string
 }
 
 // ServeDNS implements dns.Handler interface
@@ -48,6 +51,17 @@ func (h handler) getECS(r *dns.Msg) net.IP {
 			if edns.Option() == dns.EDNS0SUBNET {
 				ecs = edns.(*dns.EDNS0_SUBNET).Address
 			}
+		}
+	}
+
+	if h.ecsOverrides != "" && len(ecs) > 0 {
+		override, err := ioutil.ReadFile(h.ecsOverrides + "/" + ecs.String())
+		if err == nil {
+			ecsOverride := net.ParseIP(strings.TrimSpace(string(override)))
+			log.Printf("ECS override: %s -> %s\n", ecs, ecsOverride)
+			ecs = ecsOverride
+		} else {
+			log.Printf("Error loading ECS override: %s\n", err)
 		}
 	}
 

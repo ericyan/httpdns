@@ -14,9 +14,10 @@ import (
 func main() {
 	bind := flag.String("bind", "127.0.0.1", "interface to bind")
 	port := flag.Int("port", 8653, "port to run on")
+	ecsOverrides := flag.String("ecs-overrides", "", "path to EDNS Client Subnet overrides")
 	flag.Parse()
 
-	dns.Handle(".", handler{dnspod})
+	dns.Handle(".", handler{dnspod, *ecsOverrides})
 	dns.HandleFunc("httpdns.", instrumentation)
 
 	go func() {
