@@ -22,6 +22,8 @@ func newHandler(upstream string, ecsOverrides string, ecsIPv4Mask int, ecsIPv6Ma
 	switch upstream {
 	case "dnspod":
 		upstreamFunc = dnspod
+	case "114dns":
+		upstreamFunc = dns114
 	default:
 		log.Fatalf("Unsupported upstream: %s\n", upstream)
 	}

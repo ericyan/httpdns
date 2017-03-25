@@ -63,3 +63,35 @@ func dnspod(dn string, ip net.IP) (*answer, error) {
 
 	return answer, nil
 }
+
+func dns114(dn string, ip net.IP) (*answer, error) {
+	answer := newAnswer(dn)
+
+	qs := "http://114.114.114.114/d?dn=" + dn + "&type=a&ttl=y"
+	if len(ip) > 0 {
+		qs = qs + "&ip=" + ip.String()
+	}
+	resp, err := http.Get(qs)
+	if err != nil {
+		return answer, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return answer, err
+	}
+
+	for _, record := range strings.Split(string(body), ";") {
+		record := strings.Split(record, ",")
+
+		ttl, err := strconv.Atoi(record[1])
+		if err != nil {
+			ttl = 600
+		}
+
+		answer.addRecord(record[0], ttl)
+	}
+
+	return answer, nil
+}
