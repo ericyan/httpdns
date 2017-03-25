@@ -33,6 +33,30 @@ func (a *answer) addRecord(ip string, ttl int) {
 	}
 }
 
+func getBody(qs string) (string, error) {
+	resp, err := http.Get(qs)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
+func parseTTL(s string) int {
+	ttl, err := strconv.Atoi(s)
+	if err != nil {
+		ttl = 600
+	}
+
+	return ttl
+}
+
 func dnspod(dn string, ip net.IP) (*answer, error) {
 	answer := newAnswer(dn)
 
@@ -40,23 +64,15 @@ func dnspod(dn string, ip net.IP) (*answer, error) {
 	if len(ip) > 0 {
 		qs = qs + "&ip=" + ip.String()
 	}
-	resp, err := http.Get(qs)
+
+	body, err := getBody(qs)
 	if err != nil {
 		return answer, err
 	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return answer, err
-	}
-	data := strings.SplitN(string(body), ",", 2)
+	data := strings.SplitN(body, ",", 2)
 
-	ttl, err := strconv.Atoi(data[1])
-	if err != nil {
-		ttl = 600
-	}
-
+	ttl := parseTTL(data[1])
 	for _, ip := range strings.Split(data[0], ";") {
 		answer.addRecord(ip, ttl)
 	}
@@ -71,26 +87,15 @@ func dns114(dn string, ip net.IP) (*answer, error) {
 	if len(ip) > 0 {
 		qs = qs + "&ip=" + ip.String()
 	}
-	resp, err := http.Get(qs)
-	if err != nil {
-		return answer, err
-	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := getBody(qs)
 	if err != nil {
 		return answer, err
 	}
 
-	for _, record := range strings.Split(string(body), ";") {
+	for _, record := range strings.Split(body, ";") {
 		record := strings.Split(record, ",")
-
-		ttl, err := strconv.Atoi(record[1])
-		if err != nil {
-			ttl = 600
-		}
-
-		answer.addRecord(record[0], ttl)
+		answer.addRecord(record[0], parseTTL(record[1]))
 	}
 
 	return answer, nil
