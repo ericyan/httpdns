@@ -16,6 +16,19 @@ type handler struct {
 	ecsIPv6Mask  int
 }
 
+func newHandler(upstream string, ecsOverrides string, ecsIPv4Mask int, ecsIPv6Mask int) handler {
+	var upstreamFunc UpstreamFunc
+
+	switch upstream {
+	case "dnspod":
+		upstreamFunc = dnspod
+	default:
+		log.Fatalf("Unsupported upstream: %s\n", upstream)
+	}
+
+	return handler{upstreamFunc, ecsOverrides, ecsIPv4Mask, ecsIPv6Mask}
+}
+
 // ServeDNS implements dns.Handler interface
 func (h handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
