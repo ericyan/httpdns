@@ -66,6 +66,9 @@ func dnspod(dn string, ip net.IP) (*answer, error) {
 	}
 
 	body, err := getBody(qs)
+	if len(body) == 0 {
+		return answer, nil
+	}
 	if err != nil {
 		return answer, err
 	}
@@ -89,6 +92,9 @@ func dns114(dn string, ip net.IP) (*answer, error) {
 	}
 
 	body, err := getBody(qs)
+	if len(body) == 0 {
+		return answer, nil
+	}
 	if err != nil {
 		return answer, err
 	}
