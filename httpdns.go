@@ -30,6 +30,13 @@ func main() {
 		}
 	}()
 
+	go func() {
+		srv := &dns.Server{Addr: *bind + ":" + strconv.Itoa(*port), Net: "tcp"}
+		if err := srv.ListenAndServe(); err != nil {
+			log.Fatalf("Failed to set tcp listener %s\n", err.Error())
+		}
+	}()
+
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	s := <-sig
