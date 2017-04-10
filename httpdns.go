@@ -13,7 +13,7 @@ import (
 
 func main() {
 	bind := flag.String("bind", "127.0.0.1", "interface to bind")
-	port := flag.Int("port", 8653, "port to run on")
+	port := flag.Int("port", 8053, "port to run on")
 	upstream := flag.String("upstream", "dnspod", "upstream to use")
 	ecsOverrides := flag.String("ecs-overrides", "", "path to EDNS Client Subnet overrides")
 	ecsIPv4Mask := flag.Int("ecs-ipv4-prefix", 24, "prefix-length of IPv4 EDNS Client Subnet")
